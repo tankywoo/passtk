@@ -11,6 +11,9 @@
 # level 2 : a-zA-Z0-9	(default)
 # level 3 : a-zA-Z0-9!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
 
+
+# Base : lower + power
+
 import argparse
 import string
 import random
@@ -21,25 +24,25 @@ upper = string.ascii_uppercase
 letter = string.ascii_letters
 punctuation = string.punctuation
 
-str_1 = letter
-str_2 = str_1 + digit
-str_3 = str_2 + punctuation
-
-def genstr(level):
-	if level < 1:
-		level = 1
-	if level > 3:
-		level = 3
-	if level == 1:
-		return str_1
-	elif level == 2:
-		return str_2
-	else:
-		return str_3
 
 def generate(level=2):
-	str = genstr(level)
-	print ''.join(random.sample(str, 8))
+	#str = genstr(level)
+	#print ''.join(random.sample(str, 8))
+	str=''
+	if level == 1:
+		res =  ''.join(random.sample(letter, 8))
+	elif level == 2:
+		s1 = ''.join(random.sample(letter,7))
+		s2 = random.choice(digit)
+		res = s1+s2
+	else:
+		s1 = ''.join(random.sample(letter,6))
+		s2 = ''.join(random.sample(digit+punctuation,2))
+		res = s1+s2
+	res2 = list(res)
+	random.shuffle(res2)
+	res3 = ''.join(res2)
+	print res3
 
 
 if __name__ == '__main__':
