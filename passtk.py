@@ -62,6 +62,7 @@ def level_three(length):
 
 	
 def generate(level=2, length=8):
+	random.seed()
 	if level == 1:
 		pass_str = level_one(length)
 	elif level == 2:
