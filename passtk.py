@@ -5,38 +5,47 @@
 
 # Argument:
 # -l/--level : 1-5, default is 3
-# -n/--length : the length of the password
+# -n/--length : the length of the password # TODO
 
-# level 1 : a-z
-# level 2 : a-zA-Z
-# level 3 : a-zA-Z0-9	(default)
-# level 4 : a-zA-Z0-9~!@#$%^&*
-# level 5 : a-zA-Z0-9!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+# level 1 : a-zA-Z
+# level 2 : a-zA-Z0-9	(default)
+# level 3 : a-zA-Z0-9!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
 
 import argparse
 import string
 import random
 
 digit = string.digits
-lower = string.lowercase
-upper = string.uppercase
-punctuation_1 = '~!@#$%^&*'
-punctuation_2 = string.punctuation
+lower = string.ascii_lowercase
+upper = string.ascii_uppercase
+letter = string.ascii_letters
+punctuation = string.punctuation
 
-str_1 = lower
-str_2 = lower + upper
-str_3 = lower + upper + digit
-str_4 = lower + upper + digit + punctuation_1
-str_5 = lower + upper + digit + punctuation_2
+str_1 = letter
+str_2 = str_1 + digit
+str_3 = str_2 + punctuation
 
+def genstr(level):
+	if level < 1:
+		level = 1
+	if level > 3:
+		level = 3
+	if level == 1:
+		return str_1
+	elif level == 2:
+		return str_2
+	else:
+		return str_3
 
-def generate():
-	print ''.join(random.sample(str_5, 8))
+def generate(level=2):
+	str = genstr(level)
+	print ''.join(random.sample(str, 8))
 
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='')
-	parser.add_argument('-l', '--level', dest='level', default=3,help='')
+	parser.add_argument('-l', '--level', dest='level', type=int, default=2,help='')
 	args = parser.parse_args()
-
-	generate()
+	
+	level = args.level
+	generate(level)
