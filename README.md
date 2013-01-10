@@ -1,3 +1,7 @@
+Passtk is a `python` script that can generate a `random password` automatically.
+
+It can specified the `level` and the `length` of the password
+
 	tankywoo@gentoo ~/passtk $ ./passtk.py -h
 	usage: passtk.py [-h] [-l LEVEL] [-n LENGTH]
 
