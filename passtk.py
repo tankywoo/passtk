@@ -44,7 +44,10 @@ def gen_pass(level, length):
 	lower_num = random.randint(1, length-level)
 	lower_str = choice_n(LOWER, lower_num)
 
-	upper_num = random.randint(1, length - lower_num-(level-1))
+	if level == 1:
+		upper_num = length - lower_num
+	else:
+		upper_num = random.randint(1, length - lower_num-(level-1))
 	upper_str = choice_n(UPPER, upper_num)
 
 	pass_str = lower_str + upper_str
