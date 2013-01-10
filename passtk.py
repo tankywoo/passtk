@@ -11,6 +11,11 @@
 # level 2 : a-zA-Z0-9	(default)
 # level 3 : a-zA-Z0-9!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
 
+__version__ = '1.1'
+__author__  = 'Tanky Woo'
+__url__     = 'https://github.com/tankywoo/passtk'
+__license__ = 'MIT License'
+
 import argparse
 import string
 import random
