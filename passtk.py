@@ -22,16 +22,14 @@ LETTER = string.ascii_letters
 PUNCTUATION = string.punctuation
 
 def _filter(level):
-	if level < 1:
-		level = 1
-	if level > 3:
-		level = 3
+	if level < 1:	level = 1
+	if level > 3:	level = 3
 	return level
 
-def shuffle(pwd):
+def _shuffle(pwd):
 	_pwd = list(pwd)
 	random.shuffle(_pwd)
-	return ''.join(_pwd)
+	return str().join(_pwd)
 
 
 def choice_n(seq, n):
@@ -67,14 +65,15 @@ def gen_pass(level, length):
 	return pass_str
 	
 
+# Main Function
 def generate(level=2, length=8):
-	# Main Function
 	random.seed()
 	pass_str = gen_pass(level, length)
-	res = shuffle(pass_str)
+	res = _shuffle(pass_str)
 	print res
 
 
+# Entry
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser(description='')
 	parser.add_argument('-l', '--level', dest='level', type=int, default=2, 
