@@ -1,8 +1,9 @@
+# About
 Passtk is a `python` script that can generate a `random password`.
+
 Copyright (C) 2013 by TankyWoo
 
-Usage:
-
+# Usage
 It can specified the `level` and the `length` of the password
 
 	usage: passtk.py [-h] [-l LEVEL] [-n LENGTH]
@@ -15,13 +16,18 @@ It can specified the `level` and the `length` of the password
 	  -n LENGTH, --length LENGTH
 							The length of the password
 
-Setup:
 
+# Setup
 Use it in your `Unix/Linux` system:
+
 	sudo cp passtk.py /usr/bin/passtk
+	
 And then you can use `passtk` command to use it.
 
+# License
 MIT License
 
-Contact:
+# Contact
+
 	echo YWRtaW5AdGFua3l3b28uY29tCg== | base64 -d
+
