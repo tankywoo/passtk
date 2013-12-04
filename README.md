@@ -14,6 +14,13 @@ A tool to generate random password.
       -n LENGTH, --length LENGTH
                             The length of password
 
+## Installation ##
+
+    pip install passtk
+
+or
+
+    python setup.py install
 
 ## Contact ##
 
