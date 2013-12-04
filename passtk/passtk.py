@@ -1,16 +1,25 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# passtk
+"""
+usage: passtk.py [-h] [-l LEVEL] [-n LENGTH]
 
-# Argument:
-# -l/--level : 1-3, default is 2
-# -n/--length : the length of the password
+A tool to generate random password.
 
-# level 1 : a-zA-Z
-# level 2 : a-zA-Z0-9    (default)
-# level 3 : a-zA-Z0-9!"#$%&'()*+,-./:;<=>?@[\]^_`{|}~
+optional arguments:
+  -h, --help            show this help message and exit
+  -l LEVEL, --level LEVEL
+                        The level(1-3, default is 2) of password, higher is
+                        complex
+  -n LENGTH, --length LENGTH
+                        The length of password
 
+
+* level 1 : a-zA-Z
+* level 2 : a-zA-Z0-9    (default)
+* level 3 : a-zA-Z0-9!"#$%&"()*+,-./:;<=>?@[\]^_`{|}~
+
+"""
 
 import argparse
 import string
@@ -71,25 +80,25 @@ def _gen_pass(level, length):
 
 
 # Main Function
-def generate(level=DEFAULT_LEVEL, length=DEFAULT_LENGTH):
+def main():
+    parser = argparse.ArgumentParser(
+            description="A tool to generate random password.")
+    parser.add_argument("-l", "--level", dest="level", 
+            type=int, default=DEFAULT_LEVEL, 
+            help="The level(1-3, default is 2) of password, higher is complex")
+    parser.add_argument("-n", "--length", dest="length", 
+            type=int, default=DEFAULT_LENGTH,
+            help="The length of password")
+    args = parser.parse_args()
+
+    level = _filter(args.level)
+    length = args.length
+
     random.seed()
     pass_str = _gen_pass(level, length)
     password = _shuffle(pass_str)
     print password
 
 
-# Entry
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='')
-    #TODO
-    parser.add_argument('-l', '--level', dest='level', 
-            type=int, default=DEFAULT_LEVEL, 
-            help='The level(1-3, default is 2) of password, higher is complex')
-    parser.add_argument('-n', '--length', dest='length', 
-            type=int, default=DEFAULT_LENGTH,
-            help='The length of password')
-    args = parser.parse_args()
-
-    level = _filter(args.level)
-    length = args.length
-    generate(level,length)
+if __name__ == "__main__":
+    main()
