@@ -12,7 +12,7 @@ A tool to generate random password.
                             The level(1-3, default is 2) of password, higher is
                             complex
       -n LENGTH, --length LENGTH
-                            The length of password
+                            The length of password(at least 4, default is 8)
 
 ## Installation ##
 
