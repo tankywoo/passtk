@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+'''
+TODO:
+
+    * add -p option to display saved password entries
+    * add --expire option, delete expire saved password entries
+'''
 import os
 import datetime
 import argparse
@@ -16,6 +22,7 @@ DEFAULT_LENGTH = 8
 
 # store password into ~/.passtk
 PASS_STORE = os.path.join(os.path.expanduser('~'), '.passtk')
+
 
 def _filter(level, length):
     if level != max(min(level, 3), max(level, 1)):
@@ -86,6 +93,9 @@ def main():
                         type=int, default=DEFAULT_LENGTH,
                         help="The length of password(at least 4, "
                              "default is %s)" % DEFAULT_LENGTH)
+    parser.add_argument("-u", "--unsave", dest="unsave",
+                        action='store_true',
+                        help="Disable storing password into ~/.passtk")
     args = parser.parse_args()
 
     level, length = _filter(args.level, args.length)
@@ -94,10 +104,12 @@ def main():
     password = _gen_pass(level, length)
     print password
 
-    with open(PASS_STORE, 'a+') as fd:
-        now = datetime.datetime.now()
-        stored_str = '{0}\t{1}\n'.format(now, password)
-        fd.write(stored_str)
+    unsave = args.unsave
+    if not unsave:
+        with open(PASS_STORE, 'a+') as fd:
+            now = datetime.datetime.now()
+            stored_str = '{0}\t{1}\n'.format(now, password)
+            fd.write(stored_str)
 
 
 if __name__ == "__main__":
