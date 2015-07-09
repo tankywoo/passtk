@@ -3,7 +3,6 @@
 '''
 TODO:
 
-    * add -p option to display saved password entries
     * add --expire option, delete expire saved password entries
 '''
 import os
@@ -96,7 +95,18 @@ def main():
     parser.add_argument("-u", "--unsave", dest="unsave",
                         action='store_true',
                         help="Disable storing password into ~/.passtk")
+    parser.add_argument("-p", dest="preview", action='store_true',
+                        help="Show password entries in ~/.passtk")
     args = parser.parse_args()
+
+    if args.preview:
+        if os.path.exists(PASS_STORE):
+            with open(PASS_STORE, 'r') as fd:
+                for entry in fd.xreadlines():
+                    print(entry.rstrip())
+        else:
+            print('{0} file not exists'.format(PASS_STORE))
+        return
 
     level, length = _filter(args.level, args.length)
 
