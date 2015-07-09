@@ -8,7 +8,6 @@ import random
 DIGIT = string.digits
 LOWER = string.ascii_lowercase
 UPPER = string.ascii_uppercase
-LETTER = string.ascii_letters
 PUNCTUATION = string.punctuation
 
 DEFAULT_LEVEL = 2
@@ -28,15 +27,13 @@ def _filter(level, length):
 def _shuffle(pwd):
     _pwd = list(pwd)
     random.shuffle(_pwd)
-    return str().join(_pwd)
+    return ''.join(_pwd)
 
 
 def _choice_n(seq, n):
     # different with random.sample(population, n)
-    r_lst = list()
-    for _ in xrange(n):
-        r_lst.append(random.choice(seq))
-    return str().join(r_lst)
+    n_lst = [random.choice(seq) for _ in xrange(n)]
+    return ''.join(n_lst)
 
 
 def _gen_pass(level, length):
@@ -53,18 +50,15 @@ def _gen_pass(level, length):
     if level == 1:
         upper_num = length - lower_num
     else:
-        upper_num = random.randint(1, length - lower_num - (level - 1))
+        upper_num = random.randint(1, length-lower_num-level+1)
     upper_str = _choice_n(UPPER, upper_num)
     pass_str = lower_str + upper_str
 
-    if level == 2 or level == 3:
+    if level in (2, 3):
         if level == 2:
             digit_num = length - lower_num - upper_num
         else:
-            digit_num = random.randint(
-                1,
-                length - lower_num - upper_num - (level - 2)
-            )
+            digit_num = random.randint(1, length-lower_num-upper_num-level+2)
         digit_str = _choice_n(DIGIT, digit_num)
         pass_str += digit_str
 
