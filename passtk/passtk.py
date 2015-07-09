@@ -14,6 +14,7 @@ PUNCTUATION = string.punctuation
 DEFAULT_LEVEL = 2
 DEFAULT_LENGTH = 8
 
+
 def _filter(level, length):
     if level != max(min(level, 3), max(level, 1)):
         print "level range should be 1-3"
@@ -23,19 +24,23 @@ def _filter(level, length):
         length = max(4, length)
     return (level, length)
 
+
 def _shuffle(pwd):
     _pwd = list(pwd)
     random.shuffle(_pwd)
     return str().join(_pwd)
 
+
 def _choice_n(seq, n):
     # different with random.sample(population, n)
     r_lst = list()
-    for i in xrange(n):
+    for _ in xrange(n):
         r_lst.append(random.choice(seq))
     return str().join(r_lst)
 
+
 def _gen_pass(level, length):
+    # pylint: disable=anomalous-backslash-in-string
     """
     :param level:
         lv1 : a-zA-Z
@@ -57,7 +62,7 @@ def _gen_pass(level, length):
             digit_num = length - lower_num - upper_num
         else:
             digit_num = random.randint(
-                1, 
+                1,
                 length - lower_num - upper_num - (level - 2)
             )
         digit_str = _choice_n(DIGIT, digit_num)
@@ -75,15 +80,15 @@ def _gen_pass(level, length):
 # Main Function
 def main():
     parser = argparse.ArgumentParser(
-            description="A tool to generate random password.")
-    parser.add_argument("-l", "--level", dest="level", 
-            type=int, default=DEFAULT_LEVEL, 
-            help="The level(1-3, default is %s) of password, higher is complex" \
-                    % DEFAULT_LEVEL)
-    parser.add_argument("-n", "--length", dest="length", 
-            type=int, default=DEFAULT_LENGTH,
-            help="The length of password(at least 4, default is %s)" \
-                    % DEFAULT_LENGTH)
+        description="A tool to generate random password.")
+    parser.add_argument("-l", "--level", dest="level",
+                        type=int, default=DEFAULT_LEVEL,
+                        help="The level(1-3, default is %s) of password,"
+                             " higher is complex" % DEFAULT_LEVEL)
+    parser.add_argument("-n", "--length", dest="length",
+                        type=int, default=DEFAULT_LENGTH,
+                        help="The length of password(at least 4, "
+                             "default is %s)" % DEFAULT_LENGTH)
     args = parser.parse_args()
 
     level, length = _filter(args.level, args.length)
