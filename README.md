@@ -1,8 +1,8 @@
-A tool to generate random password.
+A tool to generate random password, and the generated password entries will be stored into `~/.passtk` file for backup.
 
 ## Usage ##
 
-    usage: passtk.py [-h] [-l LEVEL] [-n LENGTH]
+    usage: passtk.py [-h] [-l LEVEL] [-n LENGTH] [-u] [-p]
 
     A tool to generate random password.
 
@@ -13,6 +13,10 @@ A tool to generate random password.
                             complex
       -n LENGTH, --length LENGTH
                             The length of password(at least 4, default is 8)
+      -u, --unsave          Disable storing password into ~/.passtk
+      -p                    Show password entries in ~/.passtk
+
+
 
 ## Installation ##
 
