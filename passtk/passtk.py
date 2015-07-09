@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import os
+import datetime
 import argparse
 import string
 import random
@@ -13,6 +14,8 @@ PUNCTUATION = string.punctuation
 DEFAULT_LEVEL = 2
 DEFAULT_LENGTH = 8
 
+# store password into ~/.passtk
+PASS_STORE = os.path.join(os.path.expanduser('~'), '.passtk')
 
 def _filter(level, length):
     if level != max(min(level, 3), max(level, 1)):
@@ -90,6 +93,11 @@ def main():
     random.seed()
     password = _gen_pass(level, length)
     print password
+
+    with open(PASS_STORE, 'a+') as fd:
+        now = datetime.datetime.now()
+        stored_str = '{0}\t{1}\n'.format(now, password)
+        fd.write(stored_str)
 
 
 if __name__ == "__main__":
