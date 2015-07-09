@@ -16,7 +16,7 @@ if sys.version_info < (2,7):
 
 setup(
     name = "passtk",
-    version = "0.1.1",
+    version = "0.2.1",
     url = "https://github.com/tankywoo/passtk",
     author = "Tanky Woo",
     author_email = "me@tankywoo.com",
