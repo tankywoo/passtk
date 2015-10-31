@@ -92,6 +92,8 @@ def main():
                         type=int, default=DEFAULT_LENGTH,
                         help="The length of password(at least 4, "
                              "default is %s)" % DEFAULT_LENGTH)
+    parser.add_argument("-m", "--comment", dest="comment",
+                        help="Add comment for password")
     parser.add_argument("-u", "--unsave", dest="unsave",
                         action='store_true',
                         help="Disable storing password into ~/.passtk")
@@ -118,7 +120,10 @@ def main():
     if not unsave:
         with open(PASS_STORE, 'a+') as fd:
             now = datetime.datetime.now()
-            stored_str = '{0}\t{1}\n'.format(now, password)
+            stored_str = '{0}\t{1}'.format(now, password)
+            if args.comment:
+                stored_str += '\t{0}'.format(args.comment)
+            stored_str += '\n'
             fd.write(stored_str)
 
 
