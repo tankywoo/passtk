@@ -2,7 +2,7 @@ A tool to generate random password, and the generated password entries will be s
 
 ## Usage ##
 
-    usage: passtk.py [-h] [-l LEVEL] [-n LENGTH] [-u] [-p]
+    usage: passtk [-h] [-l LEVEL] [-n LENGTH] [-m COMMENT] [-u] [-p]
 
     A tool to generate random password.
 
@@ -13,6 +13,8 @@ A tool to generate random password, and the generated password entries will be s
                             complex
       -n LENGTH, --length LENGTH
                             The length of password(at least 4, default is 8)
+      -m COMMENT, --comment COMMENT
+                            Add comment for password
       -u, --unsave          Disable storing password into ~/.passtk
       -p                    Show password entries in ~/.passtk
 
