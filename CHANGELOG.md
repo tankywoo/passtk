@@ -1,3 +1,8 @@
+## 2018/05/29
+
+* encrypt ~/.passtk
+
+
 ## 2015/10/31
 
 * add `-m` option to store password with comment

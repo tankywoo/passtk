@@ -6,10 +6,15 @@ TODO:
     * add --expire option, delete expire saved password entries
 '''
 import os
+import sys
 import datetime
 import argparse
 import string
 import random
+import struct
+import base64
+import getpass
+from Crypto.Cipher import AES
 
 DIGIT = string.digits
 LOWER = string.ascii_lowercase
@@ -21,6 +26,61 @@ DEFAULT_LENGTH = 8
 
 # store password into ~/.passtk
 PASS_STORE = os.path.join(os.path.expanduser('~'), '.passtk')
+
+ENCRYPT_MAGIC = 'PaSsTK EnCRYpt'
+DECRYPT_MAGIC = ENCRYPT_MAGIC[::-1]
+
+secret_key = None
+
+
+def is_encrypted(f):
+    with open(f, 'r') as fd:
+        ctx = fd.read()
+    if ctx[:len(ENCRYPT_MAGIC)] != ENCRYPT_MAGIC:
+        return 0
+    else:
+        return 1
+
+
+def input_secret_key():
+    global secret_key
+    if not secret_key:
+        secret_key = getpass.getpass("INPUT PASSWORD: ")
+
+
+# https://paste.ubuntu.com/11024555/
+def pad16(s):
+    t = struct.pack('>I', len(s)) + s
+    return t + '\x00' * ((16 - len(t) % 16) % 16)
+
+
+def unpad16(s):
+    n = struct.unpack('>I', s[:4])[0]
+    return s[4:n + 4]
+
+
+def encrypt(secret_key, text):
+    text = pad16(text + DECRYPT_MAGIC)
+    secret_key = pad16(secret_key)
+
+    cipher = AES.new(secret_key, AES.MODE_ECB)
+    encrypt_text = ENCRYPT_MAGIC + base64.b64encode(cipher.encrypt(text))
+    return encrypt_text
+
+
+def decrypt(secret_key, text):
+    secret_key = pad16(secret_key)
+    text = text[len(ENCRYPT_MAGIC):]
+
+    cipher = AES.new(secret_key, AES.MODE_ECB)
+    decrypt_text = cipher.decrypt(base64.b64decode(text))
+    decrypt_text = unpad16(decrypt_text)
+
+    if decrypt_text[-len(DECRYPT_MAGIC):] != DECRYPT_MAGIC:
+        print("password invalid")
+        sys.exit()
+
+    return decrypt_text[:-len(DECRYPT_MAGIC)]
 
 
 def _filter(level, length):
@@ -80,7 +140,6 @@ def _gen_pass(level, length):
     return password
 
 
-# Main Function
 def main():
     parser = argparse.ArgumentParser(
         description="A tool to generate random password.")
@@ -101,13 +160,28 @@ def main():
                         help="Show password entries in ~/.passtk")
     args = parser.parse_args()
 
+    if not os.path.exists(PASS_STORE):
+        print("{0} is not exists, create it".format(PASS_STORE))
+        input_secret_key()
+        with open(PASS_STORE, 'w') as fd:
+            encrypt_text = encrypt(secret_key, '')
+            fd.write(encrypt_text)
+
+    if not is_encrypted(PASS_STORE):
+        print("{0} is not encrypted, encrypt it now".format(PASS_STORE))
+        input_secret_key()
+        with open(PASS_STORE, 'r+') as fd:
+            encrypt_text = encrypt(secret_key, fd.read())
+            fd.seek(0)
+            fd.truncate()
+            fd.write(encrypt_text)
+
     if args.preview:
-        if os.path.exists(PASS_STORE):
-            with open(PASS_STORE, 'r') as fd:
-                for entry in fd.xreadlines():
-                    print(entry.rstrip())
-        else:
-            print('{0} file not exists'.format(PASS_STORE))
+        input_secret_key()
+        with open(PASS_STORE, 'r') as fd:
+            decrypt_text = decrypt(secret_key, fd.read())
+            for entry in decrypt_text.splitlines():
+                print(entry.rstrip())
         return
 
     level, length = _filter(args.level, args.length)
@@ -117,14 +191,24 @@ def main():
     print password
 
     unsave = args.unsave
-    if not unsave:
-        with open(PASS_STORE, 'a+') as fd:
-            now = datetime.datetime.now()
-            stored_str = '{0}\t{1}'.format(now, password)
-            if args.comment:
-                stored_str += '\t{0}'.format(args.comment)
-            stored_str += '\n'
-            fd.write(stored_str)
+    if unsave:
+        return
+
+    now = datetime.datetime.now()
+    stored_str = '{0}\t{1}'.format(now, password)
+    if args.comment:
+        stored_str += '\t{0}'.format(args.comment)
+    stored_str += os.linesep
+
+    with open(PASS_STORE, 'r+') as fd:
+        input_secret_key()
+        decrypt_text = decrypt(secret_key, fd.read())
+        text = decrypt_text + stored_str  # last char is already os.linesep
+
+        encrypt_text = encrypt(secret_key, text)
+        fd.seek(0)
+        fd.truncate()
+        fd.write(encrypt_text)
 
 
 if __name__ == "__main__":
