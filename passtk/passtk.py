@@ -33,6 +33,32 @@ DECRYPT_MAGIC = ENCRYPT_MAGIC[::-1]
 secret_key = None
 
 
+class Color(object):
+    color_codes = {
+        "reset": "\033[0m",
+        "black": "\033[1;30m",
+        "red": "\033[1;31m",
+        "green": "\033[1;32m",
+        "yellow": "\033[1;33m",
+        "blue": "\033[1;34m",
+        "magenta": "\033[1;35m",
+        "cyan": "\033[1;36m",
+        "white": "\033[1;37m",
+    }
+
+    def _color_print(self, msg, color):
+        print(self.color_codes[color] + msg + self.color_codes["reset"])
+
+    def print_ok(self, msg):
+        self._color_print(msg, "green")
+
+    def print_err(self, msg):
+        self._color_print(msg, "red")
+
+
+color = Color()
+
+
 def is_encrypted(f):
     with open(f, 'r') as fd:
         ctx = fd.read()
@@ -77,7 +103,7 @@ def decrypt(secret_key, text):
     decrypt_text = unpad16(decrypt_text)
 
     if decrypt_text[-len(DECRYPT_MAGIC):] != DECRYPT_MAGIC:
-        print("password invalid")
+        color.print_err("password invalid")
         sys.exit()
 
     return decrypt_text[:-len(DECRYPT_MAGIC)]
@@ -188,7 +214,7 @@ def main():
 
     random.seed()
     password = _gen_pass(level, length)
-    print password
+    color.print_ok(password)
 
     unsave = args.unsave
     if unsave:
