@@ -5,6 +5,7 @@ TODO:
 
     * add --expire option, delete expire saved password entries
 '''
+from __future__ import print_function
 import os
 import sys
 import datetime
@@ -111,10 +112,10 @@ def decrypt(secret_key, text):
 
 def _filter(level, length):
     if level != max(min(level, 3), max(level, 1)):
-        print "level range should be 1-3"
+        print("level range should be 1-3")
         level = max(min(level, 3), max(level, 1))
     if length != max(4, length):
-        print "length range should at least 4"
+        print("length range should at least 4")
         length = max(4, length)
     return (level, length)
 
