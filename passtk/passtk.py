@@ -167,6 +167,15 @@ def _gen_pass(level, length):
     return password
 
 
+def display_entry(nid, entry):
+    entry = entry.split('\t')
+    if len(entry) == 2:  # without comment message
+        entry.append('')
+    date_str, password, comment = entry
+    date_str = date_str.split('.')[0]  # remove microsecond
+    print("%-6s\t%-19s\t%s\t%s" % (nid, date_str, password, comment))
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="A tool to generate random password.")
@@ -207,8 +216,10 @@ def main():
         input_secret_key()
         with open(PASS_STORE, 'r') as fd:
             decrypt_text = decrypt(secret_key, fd.read())
-            for entry in decrypt_text.splitlines():
-                print(entry.rstrip())
+            entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
+            print("%-6s\t%-19s\t%s\t%s" % ('ID', 'DATE', 'PASSWORD', 'COMMENT'))
+            for nid, entry in enumerate(entries, 1):
+                display_entry(nid, entry)
         return
 
     level, length = _filter(args.level, args.length)
