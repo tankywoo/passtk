@@ -69,10 +69,10 @@ def is_encrypted(f):
         return 1
 
 
-def input_secret_key():
+def input_secret_key(input_msg=None):
     global secret_key
     if not secret_key:
-        secret_key = getpass.getpass("INPUT PASSWORD: ")
+        secret_key = getpass.getpass(input_msg or "Input master password: ")
 
 
 # https://paste.ubuntu.com/11024555/
@@ -189,14 +189,14 @@ def main():
 
     if not os.path.exists(PASS_STORE):
         print("{0} is not exists, create it".format(PASS_STORE))
-        input_secret_key()
+        input_secret_key("Input new master password: ")
         with open(PASS_STORE, 'w') as fd:
             encrypt_text = encrypt(secret_key, '')
             fd.write(encrypt_text)
 
     if not is_encrypted(PASS_STORE):
         print("{0} is not encrypted, encrypt it now".format(PASS_STORE))
-        input_secret_key()
+        input_secret_key("Input new master password: ")
         with open(PASS_STORE, 'r+') as fd:
             encrypt_text = encrypt(secret_key, fd.read())
             fd.seek(0)
@@ -228,7 +228,7 @@ def main():
     stored_str += os.linesep
 
     with open(PASS_STORE, 'r+') as fd:
-        input_secret_key()
+        input_secret_key("Input master password to save: ")
         decrypt_text = decrypt(secret_key, fd.read())
         text = decrypt_text + stored_str  # last char is already os.linesep
 
