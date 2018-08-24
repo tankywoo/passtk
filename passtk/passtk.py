@@ -194,6 +194,8 @@ def main():
                         help="Disable storing password into ~/.passtk")
     parser.add_argument("-p", dest="preview", action='store_true',
                         help="Show password entries in ~/.passtk")
+    parser.add_argument("-d", dest="delete", type=int,
+                        help="Delete password entries by id in ~/.passtk")
     args = parser.parse_args()
 
     if not os.path.exists(PASS_STORE):
@@ -220,6 +222,25 @@ def main():
             print("%-6s\t%-19s\t%s\t%s" % ('ID', 'DATE', 'PASSWORD', 'COMMENT'))
             for nid, entry in enumerate(entries, 1):
                 display_entry(nid, entry)
+        return
+
+    if args.delete:
+        del_id = args.delete
+        input_secret_key()
+        with open(PASS_STORE, 'r+') as fd:
+            decrypt_text = decrypt(secret_key, fd.read())
+            entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
+            display_entry(del_id-1, entries[del_id-1])
+            ans = raw_input('Delete it? (y/N) ')
+            if ans.lower() not in ('y', 'yes'):
+                return
+            entries = entries[:del_id-1] + entries[del_id:]
+            decrypt_text = os.linesep.join(entries)
+            encrypt_text = encrypt(secret_key, decrypt_text)
+            fd.seek(0)
+            fd.truncate()
+            fd.write(encrypt_text)
+            color.print_ok('delete done')
         return
 
     level, length = _filter(args.level, args.length)
