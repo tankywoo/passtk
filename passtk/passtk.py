@@ -230,12 +230,15 @@ def main():
         with open(PASS_STORE, 'r+') as fd:
             decrypt_text = decrypt(secret_key, fd.read())
             entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
-            display_entry(del_id-1, entries[del_id-1])
+            if del_id > len(entries):
+                color.print_err("Delete id is greater than max entry id")
+                sys.exit()
+            display_entry(del_id, entries[del_id-1])
             ans = raw_input('Delete it? (y/N) ')
             if ans.lower() not in ('y', 'yes'):
                 return
             entries = entries[:del_id-1] + entries[del_id:]
-            decrypt_text = os.linesep.join(entries)
+            decrypt_text = os.linesep.join(entries) + os.linesep
             encrypt_text = encrypt(secret_key, decrypt_text)
             fd.seek(0)
             fd.truncate()
