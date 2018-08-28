@@ -1,34 +1,48 @@
-A tool to generate random password, and the generated password entries will be stored into `~/.passtk` file for backup.
+A command line tool to generate random password.
 
-## Usage ##
+The generated password entries will be stored into `~/.passtk` file. Like [1Password](https://1password.com/) / [LastPass](https://www.lastpass.com/) / ..., there is a **master password** to manage `~/.passtk`.
 
-    usage: passtk [-h] [-l LEVEL] [-n LENGTH] [-m COMMENT] [-u] [-p]
+## Usage
 
-    A tool to generate random password.
+```
+usage: passtk.py [-h] [-l LEVEL] [-n LENGTH] [-m COMMENT] [-u] [-p]
+                 [-d DELETE]
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -l LEVEL, --level LEVEL
-                            The level(1-3, default is 2) of password, higher is
-                            complex
-      -n LENGTH, --length LENGTH
-                            The length of password(at least 4, default is 8)
-      -m COMMENT, --comment COMMENT
-                            Add comment for password
-      -u, --unsave          Disable storing password into ~/.passtk
-      -p                    Show password entries in ~/.passtk
+A tool to generate random password.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -l LEVEL, --level LEVEL
+                        The level(1-3, default is 2) of password, higher is
+                        complex
+  -n LENGTH, --length LENGTH
+                        The length of password(at least 4, default is 8)
+  -m COMMENT, --comment COMMENT
+                        Add comment for password
+  -u, --unsave          Disable storing password into ~/.passtk
+  -p                    Show password entries in ~/.passtk
+  -d DELETE             Delete password entries by id in ~/.passtk
+```
 
 
+## Installation
 
-## Installation ##
-
-    pip install passtk
+```
+pip install -U passtk
+```
 
 or
 
-    python setup.py install
+```
+python setup.py install
+```
 
-## Contact ##
 
-    Tanky Woo<me@tankywoo.com>
+## License
 
+MIT License
+
+
+## Contact
+
+Tanky Woo <me@tankywoo.com>
