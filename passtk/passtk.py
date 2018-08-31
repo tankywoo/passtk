@@ -196,6 +196,8 @@ def main():
                         help="Show password entries in ~/.passtk")
     parser.add_argument("-d", dest="delete", type=int,
                         help="Delete password entries by id in ~/.passtk")
+    parser.add_argument("-a", dest="add",
+                        help="Add password manually into ~/.passtk")
     args = parser.parse_args()
 
     if not os.path.exists(PASS_STORE):
@@ -246,11 +248,14 @@ def main():
             color.print_ok('delete done')
         return
 
-    level, length = _filter(args.level, args.length)
+    if args.add:
+        password = args.add
+    else:
+        level, length = _filter(args.level, args.length)
 
-    random.seed()
-    password = _gen_pass(level, length)
-    color.print_ok(password)
+        random.seed()
+        password = _gen_pass(level, length)
+        color.print_ok(password)
 
     unsave = args.unsave
     if unsave:
