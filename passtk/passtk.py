@@ -17,11 +17,6 @@ import base64
 import getpass
 from Crypto.Cipher import AES
 
-DIGIT = string.digits
-LOWER = string.ascii_lowercase
-UPPER = string.ascii_uppercase
-PUNCTUATION = string.punctuation
-
 DEFAULT_LEVEL = 2
 DEFAULT_LENGTH = 8
 
@@ -110,61 +105,68 @@ def decrypt(secret_key, text):
     return decrypt_text[:-len(DECRYPT_MAGIC)]
 
 
-def _filter(level, length):
-    if level != max(min(level, 3), max(level, 1)):
-        print("level range should be 1-3")
-        level = max(min(level, 3), max(level, 1))
-    if length != max(4, length):
-        print("length range should at least 4")
-        length = max(4, length)
-    return (level, length)
+class Password(object):
 
+    def __init__(self, length, level):
+        self.length = length
+        self.level = level
+        self.password = ""
+        random.seed()
 
-def _shuffle(pwd):
-    _pwd = list(pwd)
-    random.shuffle(_pwd)
-    return ''.join(_pwd)
+    def valid(self):
+        if self.length < 4:
+            color.print_err("length should be at least 4")
+            sys.exit()
+        if self.level > 3 or self.level < 1:
+            color.print_err("level should be in 1-3")
+            sys.exit()
 
+    def shuffle(self):
+        pwd = list(self.password)
+        random.shuffle(pwd)
+        self.password = ''.join(pwd)
 
-def _choice_n(seq, n):
-    # different with random.sample(population, n)
-    n_lst = [random.choice(seq) for _ in xrange(n)]
-    return ''.join(n_lst)
+    @staticmethod
+    def choice_n(seq, n):
+        # different with random.sample(population, n)
+        n_lst = [random.choice(seq) for _ in xrange(n)]
+        return ''.join(n_lst)
 
+    def generate(self):
+        # pylint: disable=anomalous-backslash-in-string
+        """
+        :param level:
+            level 1 : lower letters + upper letter
+            level 2 : lower letters + upper letter + digits    (default)
+            level 3 : lower letters + upper letter + digits + punctuations
+        """
+        self.valid()
 
-def _gen_pass(level, length):
-    # pylint: disable=anomalous-backslash-in-string
-    """
-    :param level:
-        lv1 : a-zA-Z
-        lv2 : a-zA-Z0-9    (default)
-        lv3 : a-zA-Z0-9!"#$%&"()*+,-./:;<=>?@[\]^_`{|}~
-    """
-
-    lower_num = random.randint(1, length-level)
-    lower_str = _choice_n(LOWER, lower_num)
-    if level == 1:
-        upper_num = length - lower_num
-    else:
-        upper_num = random.randint(1, length-lower_num-level+1)
-    upper_str = _choice_n(UPPER, upper_num)
-    pass_str = lower_str + upper_str
-
-    if level in (2, 3):
-        if level == 2:
-            digit_num = length - lower_num - upper_num
+        lower_num = random.randint(1, self.length-self.level)
+        lower_str = self.choice_n(string.ascii_lowercase, lower_num)
+        if self.level == 1:
+            upper_num = self.length - lower_num
         else:
-            digit_num = random.randint(1, length-lower_num-upper_num-level+2)
-        digit_str = _choice_n(DIGIT, digit_num)
-        pass_str += digit_str
+            upper_num = random.randint(1, self.length-lower_num-self.level+1)
+        upper_str = self.choice_n(string.ascii_uppercase, upper_num)
+        self.password += lower_str + upper_str
 
-    if level == 3:
-        punc_num = length - lower_num - upper_num - digit_num
-        punc_str = _choice_n(PUNCTUATION, punc_num)
-        pass_str += punc_str
+        if self.level in (2, 3):
+            if self.level == 2:
+                digit_num = self.length - lower_num - upper_num
+            else:
+                digit_num = random.randint(1, self.length-lower_num-upper_num-self.level+2)
+            digit_str = self.choice_n(string.digits, digit_num)
+            self.password += digit_str
 
-    password = _shuffle(pass_str)
-    return password
+        if self.level == 3:
+            punc_num = self.length - lower_num - upper_num - digit_num
+            punc_str = self.choice_n(string.punctuation, punc_num)
+            self.password += punc_str
+
+        self.shuffle()
+
+        return self.password
 
 
 def display_entry(nid, entry):
@@ -251,10 +253,8 @@ def main():
     if args.add:
         password = args.add
     else:
-        level, length = _filter(args.level, args.length)
-
-        random.seed()
-        password = _gen_pass(level, length)
+        p = Password(args.length, args.level)
+        password = p.generate()
         color.print_ok(password)
 
     unsave = args.unsave
