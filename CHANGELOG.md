@@ -1,3 +1,10 @@
+## 2018/10/01
+
+* display password entries with id
+* add `delete` password
+* add manually `add` password
+
+
 ## 2018/05/29
 
 * encrypt ~/.passtk
