@@ -52,57 +52,43 @@ class Color(object):
         self._color_print(msg, "red")
 
 
-color = Color()
+class Cryptor(object):
+    """
+    https://paste.ubuntu.com/11024555/
+    """
+    @staticmethod
+    def pad16(s):
+        t = struct.pack('>I', len(s)) + s
+        return t + '\x00' * ((16 - len(t) % 16) % 16)
 
+    @staticmethod
+    def unpad16(s):
+        n = struct.unpack('>I', s[:4])[0]
+        return s[4:n + 4]
 
-def is_encrypted(f):
-    with open(f, 'r') as fd:
-        ctx = fd.read()
-    if ctx[:len(ENCRYPT_MAGIC)] != ENCRYPT_MAGIC:
-        return 0
-    else:
-        return 1
+    @staticmethod
+    def encrypt(secret_key, text):
+        text = Cryptor.pad16(text + DECRYPT_MAGIC)
+        secret_key = Cryptor.pad16(secret_key)
 
+        cipher = AES.new(secret_key, AES.MODE_ECB)
+        encrypt_text = ENCRYPT_MAGIC + base64.b64encode(cipher.encrypt(text))
+        return encrypt_text
 
-def input_secret_key(input_msg=None):
-    global secret_key
-    if not secret_key:
-        secret_key = getpass.getpass(input_msg or "Input master password: ")
+    @staticmethod
+    def decrypt(secret_key, text):
+        secret_key = Cryptor.pad16(secret_key)
+        text = text[len(ENCRYPT_MAGIC):]
 
+        cipher = AES.new(secret_key, AES.MODE_ECB)
+        decrypt_text = cipher.decrypt(base64.b64decode(text))
+        decrypt_text = Cryptor.unpad16(decrypt_text)
 
-# https://paste.ubuntu.com/11024555/
-def pad16(s):
-    t = struct.pack('>I', len(s)) + s
-    return t + '\x00' * ((16 - len(t) % 16) % 16)
+        if decrypt_text[-len(DECRYPT_MAGIC):] != DECRYPT_MAGIC:
+            color.print_err("password invalid")
+            sys.exit()
 
-
-def unpad16(s):
-    n = struct.unpack('>I', s[:4])[0]
-    return s[4:n + 4]
-
-
-def encrypt(secret_key, text):
-    text = pad16(text + DECRYPT_MAGIC)
-    secret_key = pad16(secret_key)
-
-    cipher = AES.new(secret_key, AES.MODE_ECB)
-    encrypt_text = ENCRYPT_MAGIC + base64.b64encode(cipher.encrypt(text))
-    return encrypt_text
-
-
-def decrypt(secret_key, text):
-    secret_key = pad16(secret_key)
-    text = text[len(ENCRYPT_MAGIC):]
-
-    cipher = AES.new(secret_key, AES.MODE_ECB)
-    decrypt_text = cipher.decrypt(base64.b64decode(text))
-    decrypt_text = unpad16(decrypt_text)
-
-    if decrypt_text[-len(DECRYPT_MAGIC):] != DECRYPT_MAGIC:
-        color.print_err("password invalid")
-        sys.exit()
-
-    return decrypt_text[:-len(DECRYPT_MAGIC)]
+        return decrypt_text[:-len(DECRYPT_MAGIC)]
 
 
 class Password(object):
@@ -169,6 +155,21 @@ class Password(object):
         return self.password
 
 
+def is_encrypted(f):
+    with open(f, 'r') as fd:
+        ctx = fd.read()
+    if ctx[:len(ENCRYPT_MAGIC)] != ENCRYPT_MAGIC:
+        return 0
+    else:
+        return 1
+
+
+def input_secret_key(input_msg=None):
+    global secret_key
+    if not secret_key:
+        secret_key = getpass.getpass(input_msg or "Input master password: ")
+
+
 def display_entry(nid, entry):
     entry = entry.split('\t')
     if len(entry) == 2:  # without comment message
@@ -176,6 +177,10 @@ def display_entry(nid, entry):
     date_str, password, comment = entry
     date_str = date_str.split('.')[0]  # remove microsecond
     print("%-6s\t%-19s\t%s\t%s" % (nid, date_str, password, comment))
+
+
+color = Color()
+cryptor = Cryptor()
 
 
 def main():
@@ -206,14 +211,14 @@ def main():
         print("{0} is not exists, create it".format(PASS_STORE))
         input_secret_key("Input new master password: ")
         with open(PASS_STORE, 'w') as fd:
-            encrypt_text = encrypt(secret_key, '')
+            encrypt_text = cryptor.encrypt(secret_key, '')
             fd.write(encrypt_text)
 
     if not is_encrypted(PASS_STORE):
         print("{0} is not encrypted, encrypt it now".format(PASS_STORE))
         input_secret_key("Input new master password: ")
         with open(PASS_STORE, 'r+') as fd:
-            encrypt_text = encrypt(secret_key, fd.read())
+            encrypt_text = cryptor.cryptor.encrypt(secret_key, fd.read())
             fd.seek(0)
             fd.truncate()
             fd.write(encrypt_text)
@@ -221,7 +226,7 @@ def main():
     if args.preview:
         input_secret_key()
         with open(PASS_STORE, 'r') as fd:
-            decrypt_text = decrypt(secret_key, fd.read())
+            decrypt_text = cryptor.decrypt(secret_key, fd.read())
             entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
             print("%-6s\t%-19s\t%s\t%s" % ('ID', 'DATE', 'PASSWORD', 'COMMENT'))
             for nid, entry in enumerate(entries, 1):
@@ -232,7 +237,7 @@ def main():
         del_id = args.delete
         input_secret_key()
         with open(PASS_STORE, 'r+') as fd:
-            decrypt_text = decrypt(secret_key, fd.read())
+            decrypt_text = cryptor.decrypt(secret_key, fd.read())
             entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
             if del_id > len(entries):
                 color.print_err("Delete id is greater than max entry id")
@@ -243,7 +248,7 @@ def main():
                 return
             entries = entries[:del_id-1] + entries[del_id:]
             decrypt_text = os.linesep.join(entries) + os.linesep
-            encrypt_text = encrypt(secret_key, decrypt_text)
+            encrypt_text = cryptor.encrypt(secret_key, decrypt_text)
             fd.seek(0)
             fd.truncate()
             fd.write(encrypt_text)
@@ -269,10 +274,10 @@ def main():
 
     with open(PASS_STORE, 'r+') as fd:
         input_secret_key("Input master password to save: ")
-        decrypt_text = decrypt(secret_key, fd.read())
+        decrypt_text = cryptor.decrypt(secret_key, fd.read())
         text = decrypt_text + stored_str  # last char is already os.linesep
 
-        encrypt_text = encrypt(secret_key, text)
+        encrypt_text = cryptor.encrypt(secret_key, text)
         fd.seek(0)
         fd.truncate()
         fd.write(encrypt_text)
