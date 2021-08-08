@@ -15,14 +15,14 @@ if sys.version_info < (2, 7):
     requires.append('argparse')
 
 setup(
-    name = "passtk",
-    version = "0.5.0",
-    url = "https://github.com/tankywoo/passtk",
-    author = "Tanky Woo",
-    author_email = "me@tankywoo.com",
-    description = "A tool to generate random password.",
-    license = "MIT License",
-    packages = find_packages(),
-    install_requires = requires,
-    entry_points = entry_points,
+    name="passtk",
+    version="0.6.0",
+    url="https://github.com/tankywoo/passtk",
+    author="Tanky Woo",
+    author_email="me@tankywoo.com",
+    description="A tool to generate random password.",
+    license="MIT License",
+    packages=find_packages(),
+    install_requires=requires,
+    entry_points=entry_points,
 )

@@ -4,6 +4,7 @@
 TODO:
 
     * add --expire option, delete expire saved password entries
+    * auto backup if program upgrade
 '''
 from __future__ import print_function
 import os
@@ -59,7 +60,7 @@ class Cryptor(object):
     @staticmethod
     def pad16(s):
         t = struct.pack('>I', len(s)) + s
-        return t + '\x00' * ((16 - len(t) % 16) % 16)
+        return t + b'\x00' * ((16 - len(t) % 16) % 16)
 
     @staticmethod
     def unpad16(s):
@@ -68,21 +69,21 @@ class Cryptor(object):
 
     @staticmethod
     def encrypt(secret_key, text):
-        text = Cryptor.pad16(text + DECRYPT_MAGIC)
-        secret_key = Cryptor.pad16(secret_key)
+        text = Cryptor.pad16((text + DECRYPT_MAGIC).encode('utf-8'))
+        secret_key = Cryptor.pad16(secret_key.encode('utf-8'))
 
         cipher = AES.new(secret_key, AES.MODE_ECB)
-        encrypt_text = ENCRYPT_MAGIC + base64.b64encode(cipher.encrypt(text))
+        encrypt_text = ENCRYPT_MAGIC + base64.b64encode(cipher.encrypt(text)).decode('utf-8')
         return encrypt_text
 
     @staticmethod
     def decrypt(secret_key, text):
-        secret_key = Cryptor.pad16(secret_key)
+        secret_key = Cryptor.pad16(secret_key.encode('utf-8'))
         text = text[len(ENCRYPT_MAGIC):]
 
         cipher = AES.new(secret_key, AES.MODE_ECB)
         decrypt_text = cipher.decrypt(base64.b64decode(text))
-        decrypt_text = Cryptor.unpad16(decrypt_text)
+        decrypt_text = Cryptor.unpad16(decrypt_text).decode('utf-8')
 
         if decrypt_text[-len(DECRYPT_MAGIC):] != DECRYPT_MAGIC:
             color.print_err("password invalid")
@@ -115,7 +116,7 @@ class Password(object):
     @staticmethod
     def choice_n(seq, n):
         # different with random.sample(population, n)
-        n_lst = [random.choice(seq) for _ in xrange(n)]
+        n_lst = [random.choice(seq) for _ in range(n)]
         return ''.join(n_lst)
 
     def generate(self):
@@ -243,7 +244,10 @@ def main():
                 color.print_err("Delete id is greater than max entry id")
                 sys.exit()
             display_entry(del_id, entries[del_id-1])
-            ans = raw_input('Delete it? (y/N) ')
+            try:
+                ans = raw_input('Delete it? (y/N) ')
+            except NameError:  # py3
+                ans = input('Delete it? (y/N) ')
             if ans.lower() not in ('y', 'yes'):
                 return
             entries = entries[:del_id-1] + entries[del_id:]
