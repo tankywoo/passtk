@@ -83,7 +83,12 @@ class Cryptor(object):
 
         cipher = AES.new(secret_key, AES.MODE_ECB)
         decrypt_text = cipher.decrypt(base64.b64decode(text))
-        decrypt_text = Cryptor.unpad16(decrypt_text).decode('utf-8')
+        decrypt_text = Cryptor.unpad16(decrypt_text)
+        # if password error, decode failed
+        try:
+            decrypt_text = decrypt_text.decode('utf-8')
+        except UnicodeDecodeError:
+            pass
 
         if decrypt_text[-len(DECRYPT_MAGIC):] != DECRYPT_MAGIC:
             color.print_err("password invalid")
@@ -275,6 +280,10 @@ def main():
     if args.comment:
         stored_str += '\t{0}'.format(args.comment)
     stored_str += os.linesep
+    try:  # py2
+        stored_str = stored_str.decode('utf-8')
+    except AttributeError:
+        pass
 
     with open(PASS_STORE, 'r+') as fd:
         input_secret_key("Input master password to save: ")
