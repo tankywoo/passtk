@@ -182,7 +182,16 @@ def display_entry(nid, entry):
         entry.append('')
     date_str, password, comment = entry
     date_str = date_str.split('.')[0]  # remove microsecond
-    print("%-6s\t%-19s\t%s\t%s" % (nid, date_str, password, comment))
+    ustr = ("%-6s\t%-19s\t%s\t%s" % (nid, date_str, password, comment))
+    try:
+        # py2, print py2 str
+        # pipe like `grep' need str
+        # ref: https://stackoverflow.com/a/15740847/1276501
+        if isinstance(ustr, unicode):
+            print(ustr.encode('utf-8'))
+    except NameError:
+        # py3, print py3 str directly
+        print(ustr)
 
 
 color = Color()
