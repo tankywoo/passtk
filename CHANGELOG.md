@@ -1,3 +1,8 @@
+## 2021/10/26
+
+* add `change` master password
+
+
 ## 2021/08/08
 
 * support py3

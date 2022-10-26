@@ -170,10 +170,11 @@ def is_encrypted(f):
         return 1
 
 
-def input_secret_key(input_msg=None):
+def input_secret_key(input_msg=None, is_force=False):
     global secret_key
-    if not secret_key:
-        secret_key = getpass.getpass(input_msg or "Input master password: ")
+    if not is_force and secret_key:
+        return
+    secret_key = getpass.getpass(input_msg or "Input master password: ")
 
 
 def display_entry(nid, entry):
@@ -220,6 +221,8 @@ def main():
                         help="Delete password entries by id in ~/.passtk")
     parser.add_argument("-a", dest="add",
                         help="Add password manually into ~/.passtk")
+    parser.add_argument("-c", dest="change", action='store_true',
+                        help="Change master password")
     args = parser.parse_args()
 
     if not os.path.exists(PASS_STORE):
@@ -237,6 +240,24 @@ def main():
             fd.seek(0)
             fd.truncate()
             fd.write(encrypt_text)
+
+    if args.change:
+        with open(PASS_STORE, 'r+') as fd:
+            input_secret_key("Input old master password: ")
+            decrypt_text = cryptor.decrypt(secret_key, fd.read())
+
+            input_secret_key("Input new master password: ", is_force=True)
+            secret_key_1st = secret_key
+            input_secret_key("Input new master password again: ", is_force=True)
+            if secret_key_1st != secret_key:
+                color.print_err("new master passwords not match")
+                sys.exit()
+            encrypt_text = cryptor.encrypt(secret_key, decrypt_text)
+            fd.seek(0)
+            fd.truncate()
+            fd.write(encrypt_text)
+            color.print_ok("change master password ok")
+        return
 
     if args.preview:
         input_secret_key()

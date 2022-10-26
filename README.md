@@ -22,6 +22,7 @@ optional arguments:
   -u, --unsave          Disable storing password into ~/.passtk
   -p                    Show password entries in ~/.passtk
   -d DELETE             Delete password entries by id in ~/.passtk
+  -c CHANGE             Change master password
 ```
 
 
