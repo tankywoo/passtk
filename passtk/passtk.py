@@ -43,14 +43,14 @@ class Color(object):
         "white": "\033[1;37m",
     }
 
-    def _color_print(self, msg, color):
-        print(self.color_codes[color] + msg + self.color_codes["reset"])
+    def _color_print(self, msg, color, file=None):
+        print(self.color_codes[color] + msg + self.color_codes["reset"], file=file)
 
     def print_ok(self, msg):
         self._color_print(msg, "green")
 
     def print_err(self, msg):
-        self._color_print(msg, "red")
+        self._color_print(msg, "red", file=sys.stderr)
 
 
 class Cryptor(object):
