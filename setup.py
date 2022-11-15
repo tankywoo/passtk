@@ -10,13 +10,13 @@ entry_points = {
     ]
 }
 
-requires = ['pycrypto']
+requires = ['pycryptodome']
 if sys.version_info < (2, 7):
     requires.append('argparse')
 
 setup(
     name="passtk",
-    version="0.6.4",
+    version="0.6.5",
     url="https://github.com/tankywoo/passtk",
     author="Tanky Woo",
     author_email="me@tankywoo.com",
