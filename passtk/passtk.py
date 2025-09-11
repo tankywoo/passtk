@@ -107,11 +107,22 @@ class Cryptor(object):
         except UnicodeDecodeError:
             pass
 
-        if decrypt_text[-len(DECRYPT_MAGIC):] != DECRYPT_MAGIC:
+        # Ensure both strings are the same type for comparison
+        if isinstance(decrypt_text, bytes):
+            # If decrypt_text is still bytes, comparison will fail
+            color.print_err("password invalid")
+            sys.exit()
+        
+        # Ensure DECRYPT_MAGIC is unicode string for comparison
+        decrypt_magic = DECRYPT_MAGIC
+        if sys.version_info[0] == 2 and isinstance(decrypt_text, unicode_type):
+            decrypt_magic = DECRYPT_MAGIC.decode('utf-8') if isinstance(DECRYPT_MAGIC, str) else DECRYPT_MAGIC
+        
+        if decrypt_text[-len(decrypt_magic):] != decrypt_magic:
             color.print_err("password invalid")
             sys.exit()
 
-        return decrypt_text[:-len(DECRYPT_MAGIC)]
+        return decrypt_text[:-len(decrypt_magic)]
 
 
 class Password(object):
