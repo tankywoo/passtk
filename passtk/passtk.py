@@ -7,6 +7,7 @@ TODO:
     * auto backup if program upgrade
 '''
 from __future__ import print_function
+from __future__ import unicode_literals
 import os
 import sys
 import datetime
@@ -17,6 +18,22 @@ import struct
 import base64
 import getpass
 from Crypto.Cipher import AES
+
+# Python 2/3 compatibility
+try:
+    input = raw_input  # Python 2
+except NameError:
+    pass  # Python 3
+
+try:
+    unicode_type = unicode  # Python 2
+except NameError:
+    unicode_type = str  # Python 3
+
+try:
+    string_types = basestring  # Python 2
+except NameError:
+    string_types = str  # Python 3
 
 DEFAULT_LEVEL = 2
 DEFAULT_LENGTH = 8
@@ -184,14 +201,14 @@ def display_entry(nid, entry):
     date_str, password, comment = entry
     date_str = date_str.split('.')[0]  # remove microsecond
     ustr = ("%-6s\t%-19s\t%s\t%s" % (nid, date_str, password, comment))
-    try:
-        # py2, print py2 str
-        # pipe like `grep' need str
-        # ref: https://stackoverflow.com/a/15740847/1276501
-        if isinstance(ustr, unicode):
+    
+    # Python 2/3 compatible output
+    if sys.version_info[0] == 2:
+        if isinstance(ustr, unicode_type):
             print(ustr.encode('utf-8'))
-    except NameError:
-        # py3, print py3 str directly
+        else:
+            print(ustr)
+    else:
         print(ustr)
 
 
@@ -236,7 +253,7 @@ def main():
         print("{0} is not encrypted, encrypt it now".format(PASS_STORE))
         input_secret_key("Input new master password: ")
         with open(PASS_STORE, 'r+') as fd:
-            encrypt_text = cryptor.cryptor.encrypt(secret_key, fd.read())
+            encrypt_text = cryptor.encrypt(secret_key, fd.read())
             fd.seek(0)
             fd.truncate()
             fd.write(encrypt_text)
@@ -279,10 +296,7 @@ def main():
                 color.print_err("Delete id is greater than max entry id")
                 sys.exit()
             display_entry(del_id, entries[del_id-1])
-            try:
-                ans = raw_input('Delete it? (y/N) ')
-            except NameError:  # py3
-                ans = input('Delete it? (y/N) ')
+            ans = input('Delete it? (y/N) ')
             if ans.lower() not in ('y', 'yes'):
                 return
             entries = entries[:del_id-1] + entries[del_id:]
@@ -310,10 +324,9 @@ def main():
     if args.comment:
         stored_str += '\t{0}'.format(args.comment)
     stored_str += os.linesep
-    try:  # py2
+    # Ensure stored_str is unicode for consistent handling
+    if sys.version_info[0] == 2 and isinstance(stored_str, str):
         stored_str = stored_str.decode('utf-8')
-    except AttributeError:
-        pass
 
     with open(PASS_STORE, 'r+') as fd:
         input_secret_key("Input master password to save: ")
