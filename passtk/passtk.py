@@ -114,15 +114,17 @@ class Password(object):
     DIGITS = string.digits
     PUNCTUATION = string.punctuation
 
-    def __init__(self, length, level):
+    def __init__(self, length, level, exclude_ambiguous=False):
         """初始化密码生成器
 
         Args:
             length (int): 密码长度，至少4位
             level (int): 复杂度级别 1-3
+            exclude_ambiguous (bool): 是否排除容易混淆的字符
         """
         self.length = length
         self.level = level
+        self.exclude_ambiguous = exclude_ambiguous
         random.seed()
 
     def _validate_params(self):
@@ -147,6 +149,12 @@ class Password(object):
 
         if self.level >= 3:
             char_sets.append(self.PUNCTUATION)
+
+        # 如果需要排除混淆字符，则过滤掉这些字符
+        if self.exclude_ambiguous:
+            ambiguous_chars = 'Il1O0'
+            char_sets = [''.join(c for c in char_set if c not in ambiguous_chars)
+                         for char_set in char_sets]
 
         return char_sets
 
@@ -261,6 +269,9 @@ def main():
                         help="Add password manually into ~/.passtk")
     parser.add_argument("-c", dest="change", action='store_true',
                         help="Change master password")
+    parser.add_argument("-e", "--exclude-ambiguous", dest="exclude_ambiguous",
+                        action='store_true',
+                        help="Exclude ambiguous characters (I, l, 1, 0, O)")
     args = parser.parse_args()
 
     if not os.path.exists(PASS_STORE):
@@ -332,7 +343,7 @@ def main():
     if args.add:
         password = args.add
     else:
-        p = Password(args.length, args.level)
+        p = Password(args.length, args.level, args.exclude_ambiguous)
         password = p.generate()
         color.print_ok(password)
 
