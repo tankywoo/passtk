@@ -1,0 +1,5 @@
+[flake8]
+# 保持与tox.ini中flake8配置一致
+# 默认忽略错误: E121,E123,E126,E226,E24,E704
+ignore = E121,E123,E126,E226,E24,E704,E402
+max-line-length = 120

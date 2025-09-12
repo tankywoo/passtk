@@ -1,9 +1,11 @@
 *.swp
 *.pyc
 .DS_Store
+.tox/
 dist/
 build/
 *.egg-info
 *~
 .ropeproject
 README.html
+uv.lock
