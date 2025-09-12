@@ -245,7 +245,8 @@ color = Color()
 cryptor = Cryptor()
 
 
-def main():
+def setup_argument_parser():
+    """设置命令行参数解析器"""
     parser = argparse.ArgumentParser(
         description="A tool to generate random password.")
     parser.add_argument("-l", "--level", dest="level",
@@ -272,8 +273,11 @@ def main():
     parser.add_argument("-e", "--exclude-ambiguous", dest="exclude_ambiguous",
                         action='store_true',
                         help="Exclude ambiguous characters (I, l, 1, 0, O)")
-    args = parser.parse_args()
+    return parser
 
+
+def initialize_password_store():
+    """初始化密码存储文件"""
     if not os.path.exists(PASS_STORE):
         print("{0} is not exists, create it".format(PASS_STORE))
         input_secret_key("Input new master password: ")
@@ -290,71 +294,71 @@ def main():
             fd.truncate()
             fd.write(encrypt_text)
 
-    if args.change:
-        with open(PASS_STORE, 'r+') as fd:
-            input_secret_key("Input old master password: ")
-            decrypt_text = cryptor.decrypt(secret_key, fd.read())
 
-            input_secret_key("Input new master password: ", is_force=True)
-            secret_key_1st = secret_key
-            input_secret_key("Input new master password again: ", is_force=True)
-            if secret_key_1st != secret_key:
-                color.print_err("new master passwords not match")
-                sys.exit()
-            encrypt_text = cryptor.encrypt(secret_key, decrypt_text)
-            fd.seek(0)
-            fd.truncate()
-            fd.write(encrypt_text)
-            color.print_ok("change master password ok")
-        return
+def change_master_password():
+    """修改主密码"""
+    with open(PASS_STORE, 'r+') as fd:
+        input_secret_key("Input old master password: ")
+        decrypt_text = cryptor.decrypt(secret_key, fd.read())
 
-    if args.preview:
-        input_secret_key()
-        with open(PASS_STORE, 'r') as fd:
-            decrypt_text = cryptor.decrypt(secret_key, fd.read())
-            entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
-            print("%-6s\t%-19s\t%s\t%s" % ('ID', 'DATE', 'PASSWORD', 'COMMENT'))
-            for nid, entry in enumerate(entries, 1):
-                display_entry(nid, entry)
-        return
+        input_secret_key("Input new master password: ", is_force=True)
+        secret_key_1st = secret_key
+        input_secret_key("Input new master password again: ", is_force=True)
+        if secret_key_1st != secret_key:
+            color.print_err("new master passwords not match")
+            sys.exit()
+        encrypt_text = cryptor.encrypt(secret_key, decrypt_text)
+        fd.seek(0)
+        fd.truncate()
+        fd.write(encrypt_text)
+        color.print_ok("change master password ok")
 
-    if args.delete:
-        del_id = args.delete
-        input_secret_key()
-        with open(PASS_STORE, 'r+') as fd:
-            decrypt_text = cryptor.decrypt(secret_key, fd.read())
-            entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
-            if del_id > len(entries):
-                color.print_err("Delete id is greater than max entry id")
-                sys.exit()
-            display_entry(del_id, entries[del_id-1])
-            ans = input('Delete it? (y/N) ')
-            if ans.lower() not in ('y', 'yes'):
-                return
-            entries = entries[:del_id-1] + entries[del_id:]
-            decrypt_text = os.linesep.join(entries) + os.linesep
-            encrypt_text = cryptor.encrypt(secret_key, decrypt_text)
-            fd.seek(0)
-            fd.truncate()
-            fd.write(encrypt_text)
-            color.print_ok('delete done')
-        return
 
-    if args.add:
-        password = args.add
-    else:
-        p = Password(args.length, args.level, args.exclude_ambiguous)
-        password = p.generate()
-        color.print_ok(password)
+def preview_passwords():
+    """预览所有密码条目"""
+    input_secret_key()
+    with open(PASS_STORE, 'r') as fd:
+        decrypt_text = cryptor.decrypt(secret_key, fd.read())
+        entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
+        print("%-6s\t%-19s\t%s\t%s" % ('ID', 'DATE', 'PASSWORD', 'COMMENT'))
+        for nid, entry in enumerate(entries, 1):
+            display_entry(nid, entry)
 
-    unsave = args.unsave
-    if unsave:
-        return
 
+def delete_password(del_id):
+    """删除指定ID的密码条目"""
+    input_secret_key()
+    with open(PASS_STORE, 'r+') as fd:
+        decrypt_text = cryptor.decrypt(secret_key, fd.read())
+        entries = [e.rstrip() for e in decrypt_text.splitlines() if e.rstrip()]
+        if del_id > len(entries):
+            color.print_err("Delete id is greater than max entry id")
+            sys.exit()
+        display_entry(del_id, entries[del_id-1])
+        ans = input('Delete it? (y/N) ')
+        if ans.lower() not in ('y', 'yes'):
+            return
+        entries = entries[:del_id-1] + entries[del_id:]
+        decrypt_text = os.linesep.join(entries) + os.linesep
+        encrypt_text = cryptor.encrypt(secret_key, decrypt_text)
+        fd.seek(0)
+        fd.truncate()
+        fd.write(encrypt_text)
+        color.print_ok('delete done')
+
+
+def generate_password(length, level, exclude_ambiguous):
+    """生成密码"""
+    p = Password(length, level, exclude_ambiguous)
+    return p.generate()
+
+
+def save_password(password, comment=None):
+    """保存密码到存储文件"""
     now = datetime.datetime.now()
     stored_str = '{0}\t{1}'.format(now, password)
-    if args.comment:
-        stored_str += '\t{0}'.format(args.comment)
+    if comment:
+        stored_str += '\t{0}'.format(comment)
     stored_str += os.linesep
 
     with open(PASS_STORE, 'r+') as fd:
@@ -366,6 +370,36 @@ def main():
         fd.seek(0)
         fd.truncate()
         fd.write(encrypt_text)
+
+
+def main():
+    parser = setup_argument_parser()
+    args = parser.parse_args()
+
+    initialize_password_store()
+
+    if args.change:
+        change_master_password()
+        return
+
+    if args.preview:
+        preview_passwords()
+        return
+
+    if args.delete:
+        delete_password(args.delete)
+        return
+
+    # 生成或添加密码
+    if args.add:
+        password = args.add
+    else:
+        password = generate_password(args.length, args.level, args.exclude_ambiguous)
+        color.print_ok(password)
+
+    # 保存密码（如果需要）
+    if not args.unsave:
+        save_password(password, args.comment)
 
 
 if __name__ == "__main__":
