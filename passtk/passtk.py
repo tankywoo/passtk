@@ -106,67 +106,105 @@ class Cryptor(object):
 
 
 class Password(object):
+    """密码生成器类，支持不同复杂度级别的密码生成"""
+
+    # 字符集定义
+    LOWERCASE = string.ascii_lowercase
+    UPPERCASE = string.ascii_uppercase
+    DIGITS = string.digits
+    PUNCTUATION = string.punctuation
 
     def __init__(self, length, level):
+        """初始化密码生成器
+
+        Args:
+            length (int): 密码长度，至少4位
+            level (int): 复杂度级别 1-3
+        """
         self.length = length
         self.level = level
-        self.password = ""
         random.seed()
 
-    def valid(self):
+    def _validate_params(self):
+        """验证参数有效性"""
         if self.length < 4:
             color.print_err("length should be at least 4")
             sys.exit()
-        if self.level > 3 or self.level < 1:
+        if not 1 <= self.level <= 3:
             color.print_err("level should be in 1-3")
             sys.exit()
 
-    def shuffle(self):
-        pwd = list(self.password)
-        random.shuffle(pwd)
-        self.password = ''.join(pwd)
+    def _get_character_sets(self):
+        """根据级别获取字符集
 
-    @staticmethod
-    def choice_n(seq, n):
-        # different with random.sample(population, n)
-        n_lst = [random.choice(seq) for _ in range(n)]
-        return ''.join(n_lst)
+        Returns:
+            list: 字符集列表
+        """
+        char_sets = [self.LOWERCASE, self.UPPERCASE]
+
+        if self.level >= 2:
+            char_sets.append(self.DIGITS)
+
+        if self.level >= 3:
+            char_sets.append(self.PUNCTUATION)
+
+        return char_sets
+
+    def _distribute_length(self, num_sets):
+        """将密码长度分配给各个字符集
+
+        Args:
+            num_sets (int): 字符集数量
+
+        Returns:
+            list: 每个字符集分配的字符数量
+        """
+        # 确保每个字符集至少有一个字符
+        counts = [1] * num_sets
+        remaining = self.length - num_sets
+
+        # 随机分配剩余长度
+        for _ in range(remaining):
+            counts[random.randint(0, num_sets - 1)] += 1
+
+        return counts
+
+    def _generate_characters(self, char_sets, counts):
+        """根据字符集和数量生成字符
+
+        Args:
+            char_sets (list): 字符集列表
+            counts (list): 每个字符集的字符数量
+
+        Returns:
+            str: 生成的字符串
+        """
+        chars = []
+        for char_set, count in zip(char_sets, counts):
+            chars.extend(random.choices(char_set, k=count))
+
+        # 打乱字符顺序
+        random.shuffle(chars)
+        return ''.join(chars)
 
     def generate(self):
-        # pylint: disable=anomalous-backslash-in-string
+        """生成密码
+
+        Returns:
+            str: 生成的密码
+
+        复杂度级别说明:
+            level 1: 小写字母 + 大写字母
+            level 2: 小写字母 + 大写字母 + 数字 (默认)
+            level 3: 小写字母 + 大写字母 + 数字 + 标点符号
         """
-        :param level:
-            level 1 : lower letters + upper letter
-            level 2 : lower letters + upper letter + digits    (default)
-            level 3 : lower letters + upper letter + digits + punctuations
-        """
-        self.valid()
+        self._validate_params()
 
-        lower_num = random.randint(1, self.length-self.level)
-        lower_str = self.choice_n(string.ascii_lowercase, lower_num)
-        if self.level == 1:
-            upper_num = self.length - lower_num
-        else:
-            upper_num = random.randint(1, self.length-lower_num-self.level+1)
-        upper_str = self.choice_n(string.ascii_uppercase, upper_num)
-        self.password += lower_str + upper_str
+        char_sets = self._get_character_sets()
+        counts = self._distribute_length(len(char_sets))
+        password = self._generate_characters(char_sets, counts)
 
-        if self.level in (2, 3):
-            if self.level == 2:
-                digit_num = self.length - lower_num - upper_num
-            else:
-                digit_num = random.randint(1, self.length-lower_num-upper_num-self.level+2)
-            digit_str = self.choice_n(string.digits, digit_num)
-            self.password += digit_str
-
-        if self.level == 3:
-            punc_num = self.length - lower_num - upper_num - digit_num
-            punc_str = self.choice_n(string.punctuation, punc_num)
-            self.password += punc_str
-
-        self.shuffle()
-
-        return self.password
+        return password
 
 
 def is_encrypted(f):
