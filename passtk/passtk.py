@@ -15,7 +15,10 @@ import random
 import struct
 import base64
 import getpass
+import hashlib
 from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+from Crypto.Util.Padding import pad, unpad
 
 DEFAULT_LEVEL = 2
 DEFAULT_LENGTH = 8
@@ -23,8 +26,15 @@ DEFAULT_LENGTH = 8
 # store password into ~/.passtk
 PASS_STORE = os.path.join(os.path.expanduser('~'), '.passtk')
 
-ENCRYPT_MAGIC = 'PaSsTK EnCRYpt'
-DECRYPT_MAGIC = ENCRYPT_MAGIC[::-1]
+# 加密版本标识
+ENCRYPT_MAGIC_V1 = 'PaSsTK EnCRYpt'  # 旧版ECB格式
+ENCRYPT_MAGIC_V2 = 'PaSsTK-EnCRYpt-V2'   # 新版CBC格式
+DECRYPT_MAGIC = ENCRYPT_MAGIC_V1[::-1]
+
+# PBKDF2 配置
+PBKDF2_ITERATIONS = 100000
+SALT_SIZE = 16
+IV_SIZE = 16
 
 secret_key = None
 
@@ -54,55 +64,114 @@ class Color(object):
 
 class Cryptor(object):
     """
-    https://paste.ubuntu.com/11024555/
+    加密解密类，支持新的CBC模式和旧的ECB模式向后兼容
     """
-    @staticmethod
-    def pad16(s):
-        t = struct.pack('>I', len(s)) + s
-        return t + b'\x00' * ((16 - len(t) % 16) % 16)
 
     @staticmethod
-    def unpad16(s):
-        n = struct.unpack('>I', s[:4])[0]
-        return s[4:n + 4]
+    def derive_key(password, salt):
+        """使用PBKDF2派生256位密钥"""
+        return hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, PBKDF2_ITERATIONS)
 
     @staticmethod
     def encrypt(secret_key, text):
-        text = Cryptor.pad16((text + DECRYPT_MAGIC).encode('utf-8'))
-        secret_key = Cryptor.pad16(secret_key.encode('utf-8'))
+        """使用AES-256-CBC加密（新版本）"""
+        # 生成随机盐和IV
+        salt = get_random_bytes(SALT_SIZE)
+        iv = get_random_bytes(IV_SIZE)
 
-        cipher = AES.new(secret_key, AES.MODE_ECB)
-        encrypt_text = ENCRYPT_MAGIC + base64.b64encode(cipher.encrypt(text)).decode('utf-8')
-        return encrypt_text
+        # 派生密钥
+        key = Cryptor.derive_key(secret_key, salt)
+
+        # 加密数据
+        plaintext = (text + DECRYPT_MAGIC).encode('utf-8')
+        cipher = AES.new(key, AES.MODE_CBC, iv)
+        ciphertext = cipher.encrypt(pad(plaintext, AES.block_size))
+
+        # 组合：盐 + IV + 密文
+        encrypted_data = salt + iv + ciphertext
+
+        # 返回：版本标识 + base64编码的数据
+        return ENCRYPT_MAGIC_V2 + base64.b64encode(encrypted_data).decode('utf-8')
 
     @staticmethod
     def decrypt(secret_key, text):
-        secret_key = Cryptor.pad16(secret_key.encode('utf-8'))
-        text = text[len(ENCRYPT_MAGIC):]
+        """智能解密：自动检测版本并使用相应的解密方法"""
+        if text.startswith(ENCRYPT_MAGIC_V2):
+            return Cryptor._decrypt_cbc(secret_key, text)
+        elif text.startswith(ENCRYPT_MAGIC_V1):
+            return Cryptor._decrypt_ecb_legacy(secret_key, text)
+        else:
+            color.print_err("未知的加密格式")
+            sys.exit()
 
-        cipher = AES.new(secret_key, AES.MODE_ECB)
-        decrypt_text = cipher.decrypt(base64.b64decode(text))
-        decrypt_text = Cryptor.unpad16(decrypt_text)
-        # if password error, decode failed
+    @staticmethod
+    def _decrypt_cbc(secret_key, text):
+        """解密CBC格式（新版本）"""
         try:
-            decrypt_text = decrypt_text.decode('utf-8')
-        except UnicodeDecodeError:
-            pass
+            # 移除版本标识
+            encrypted_data = base64.b64decode(text[len(ENCRYPT_MAGIC_V2):])
 
-        # Ensure both strings are the same type for comparison
-        if isinstance(decrypt_text, bytes):
-            # If decrypt_text is still bytes, comparison will fail
-            color.print_err("password invalid")
+            # 提取盐、IV和密文
+            salt = encrypted_data[:SALT_SIZE]
+            iv = encrypted_data[SALT_SIZE:SALT_SIZE + IV_SIZE]
+            ciphertext = encrypted_data[SALT_SIZE + IV_SIZE:]
+
+            # 派生密钥
+            key = Cryptor.derive_key(secret_key, salt)
+
+            # 解密
+            cipher = AES.new(key, AES.MODE_CBC, iv)
+            plaintext = unpad(cipher.decrypt(ciphertext), AES.block_size)
+
+            # 解码并验证
+            plaintext_str = plaintext.decode('utf-8')
+            if not plaintext_str.endswith(DECRYPT_MAGIC):
+                color.print_err("密码错误")
+                sys.exit()
+
+            return plaintext_str[:-len(DECRYPT_MAGIC)]
+
+        except Exception:
+            color.print_err("密码错误或数据损坏")
             sys.exit()
 
-        # Ensure DECRYPT_MAGIC is unicode string for comparison
-        decrypt_magic = DECRYPT_MAGIC
+    @staticmethod
+    def _decrypt_ecb_legacy(secret_key, text):
+        """解密ECB格式（旧版本，向后兼容）"""
+        try:
+            # 旧版填充方法
+            def pad16(s):
+                t = struct.pack('>I', len(s)) + s
+                return t + b'\x00' * ((16 - len(t) % 16) % 16)
 
-        if decrypt_text[-len(decrypt_magic):] != decrypt_magic:
-            color.print_err("password invalid")
+            def unpad16(s):
+                n = struct.unpack('>I', s[:4])[0]
+                return s[4:n + 4]
+
+            # 旧版解密逻辑
+            secret_key_padded = pad16(secret_key.encode('utf-8'))
+            encrypted_text = text[len(ENCRYPT_MAGIC_V1):]
+
+            cipher = AES.new(secret_key_padded, AES.MODE_ECB)
+            decrypt_text = cipher.decrypt(base64.b64decode(encrypted_text))
+            decrypt_text = unpad16(decrypt_text)
+
+            decrypt_text_str = decrypt_text.decode('utf-8')
+
+            if not decrypt_text_str.endswith(DECRYPT_MAGIC):
+                color.print_err("密码错误")
+                sys.exit()
+
+            return decrypt_text_str[:-len(DECRYPT_MAGIC)]
+
+        except Exception:
+            color.print_err("密码错误或数据损坏")
             sys.exit()
 
-        return decrypt_text[:-len(decrypt_magic)]
+    @staticmethod
+    def is_encrypted(text):
+        """检查文本是否已加密"""
+        return text.startswith(ENCRYPT_MAGIC_V1) or text.startswith(ENCRYPT_MAGIC_V2)
 
 
 class Password(object):
@@ -216,12 +285,10 @@ class Password(object):
 
 
 def is_encrypted(f):
+    """检查文件是否已加密（兼容函数）"""
     with open(f, 'r') as fd:
         ctx = fd.read()
-    if ctx[:len(ENCRYPT_MAGIC)] != ENCRYPT_MAGIC:
-        return 0
-    else:
-        return 1
+    return Cryptor.is_encrypted(ctx)
 
 
 def input_secret_key(input_msg=None, is_force=False):

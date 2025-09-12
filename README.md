@@ -25,6 +25,20 @@ optional arguments:
   -c CHANGE             Change master password
 ```
 
+## Encryption Algorithm Upgrade
+
+Starting from v0.6.6, passtk uses a more secure AES-256-CBC + PBKDF2 encryption algorithm to replace the old ECB mode.
+
+If you want to immediately upgrade your existing password store to the new encryption format, you can trigger the upgrade by adding a temporary password:
+
+```bash
+passtk.py -a "temp" -m "Temporary password for encryption format upgrade"
+
+# Delete the temporary password after upgrade is complete
+passtk.py -p
+passtk.py -d <temporary_password_ID>
+```
+
 
 ## Installation
 
