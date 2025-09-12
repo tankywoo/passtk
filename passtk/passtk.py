@@ -6,8 +6,6 @@ TODO:
     * add --expire option, delete expire saved password entries
     * auto backup if program upgrade
 '''
-from __future__ import print_function
-from __future__ import unicode_literals
 import os
 import sys
 import datetime
@@ -18,22 +16,6 @@ import struct
 import base64
 import getpass
 from Crypto.Cipher import AES
-
-# Python 2/3 compatibility
-try:
-    input = raw_input  # Python 2
-except NameError:
-    pass  # Python 3
-
-try:
-    unicode_type = unicode  # Python 2
-except NameError:
-    unicode_type = str  # Python 3
-
-try:
-    string_types = basestring  # Python 2
-except NameError:
-    string_types = str  # Python 3
 
 DEFAULT_LEVEL = 2
 DEFAULT_LENGTH = 8
@@ -112,12 +94,10 @@ class Cryptor(object):
             # If decrypt_text is still bytes, comparison will fail
             color.print_err("password invalid")
             sys.exit()
-        
+
         # Ensure DECRYPT_MAGIC is unicode string for comparison
         decrypt_magic = DECRYPT_MAGIC
-        if sys.version_info[0] == 2 and isinstance(decrypt_text, unicode_type):
-            decrypt_magic = DECRYPT_MAGIC.decode('utf-8') if isinstance(DECRYPT_MAGIC, str) else DECRYPT_MAGIC
-        
+
         if decrypt_text[-len(decrypt_magic):] != decrypt_magic:
             color.print_err("password invalid")
             sys.exit()
@@ -212,15 +192,7 @@ def display_entry(nid, entry):
     date_str, password, comment = entry
     date_str = date_str.split('.')[0]  # remove microsecond
     ustr = ("%-6s\t%-19s\t%s\t%s" % (nid, date_str, password, comment))
-    
-    # Python 2/3 compatible output
-    if sys.version_info[0] == 2:
-        if isinstance(ustr, unicode_type):
-            print(ustr.encode('utf-8'))
-        else:
-            print(ustr)
-    else:
-        print(ustr)
+    print(ustr)
 
 
 color = Color()
@@ -335,9 +307,6 @@ def main():
     if args.comment:
         stored_str += '\t{0}'.format(args.comment)
     stored_str += os.linesep
-    # Ensure stored_str is unicode for consistent handling
-    if sys.version_info[0] == 2 and isinstance(stored_str, str):
-        stored_str = stored_str.decode('utf-8')
 
     with open(PASS_STORE, 'r+') as fd:
         input_secret_key("Input master password to save: ")

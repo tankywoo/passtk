@@ -11,8 +11,6 @@ entry_points = {
 }
 
 requires = ['pycryptodome']
-if sys.version_info < (2, 7):
-    requires.append('argparse')
 
 setup(
     name="passtk",
@@ -25,4 +23,5 @@ setup(
     packages=find_packages(),
     install_requires=requires,
     entry_points=entry_points,
+    python_requires=">=3.6",
 )
