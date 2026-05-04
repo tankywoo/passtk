@@ -182,18 +182,27 @@ class Password(object):
     UPPERCASE = string.ascii_uppercase
     DIGITS = string.digits
     PUNCTUATION = string.punctuation
+    SAFE_PUNCTUATION = '!@#$%^&*'
 
-    def __init__(self, length, level, exclude_ambiguous=False):
+    def __init__(self, length, level, exclude_ambiguous=False, special_chars=None):
         """初始化密码生成器
 
         Args:
             length (int): 密码长度，至少4位
-            level (int): 复杂度级别 1-3
+            level (int): 复杂度级别 1-4
             exclude_ambiguous (bool): 是否排除容易混淆的字符
+            special_chars (str): 自定义特殊字符集，仅level>=3时生效
         """
         self.length = length
         self.level = level
         self.exclude_ambiguous = exclude_ambiguous
+        self.special_chars = special_chars
+
+        # 验证special_chars不为空字符串
+        if self.special_chars is not None and self.special_chars == '':
+            color.print_err("special_chars should not be empty")
+            sys.exit()
+
         random.seed()
 
     def _validate_params(self):
@@ -201,8 +210,8 @@ class Password(object):
         if self.length < 4:
             color.print_err("length should be at least 4")
             sys.exit()
-        if not 1 <= self.level <= 3:
-            color.print_err("level should be in 1-3")
+        if not 1 <= self.level <= 4:
+            color.print_err("level should be in 1-4")
             sys.exit()
 
     def _get_character_sets(self):
@@ -217,13 +226,31 @@ class Password(object):
             char_sets.append(self.DIGITS)
 
         if self.level >= 3:
-            char_sets.append(self.PUNCTUATION)
+            # level 3: 默认使用安全特殊字符
+            # level 4: 默认使用完整标点符号
+            if self.level >= 4:
+                default_special = self.PUNCTUATION
+            else:
+                default_special = self.SAFE_PUNCTUATION
+
+            # 如果指定了自定义特殊字符集，则覆盖默认值
+            special_chars_to_use = self.special_chars if self.special_chars is not None else default_special
+            char_sets.append(special_chars_to_use)
 
         # 如果需要排除混淆字符，则过滤掉这些字符
         if self.exclude_ambiguous:
             ambiguous_chars = 'Il1O0'
             char_sets = [''.join(c for c in char_set if c not in ambiguous_chars)
                          for char_set in char_sets]
+
+        # 检查过滤后是否有空字符集
+        for char_set in char_sets:
+            if char_set == '':
+                color.print_err(
+                    "Character set is empty after filtering, "
+                    "please adjust --exclude-ambiguous or --special-chars"
+                )
+                sys.exit()
 
         return char_sets
 
@@ -273,7 +300,8 @@ class Password(object):
         复杂度级别说明:
             level 1: 小写字母 + 大写字母
             level 2: 小写字母 + 大写字母 + 数字 (默认)
-            level 3: 小写字母 + 大写字母 + 数字 + 标点符号
+            level 3: 小写字母 + 大写字母 + 数字 + 安全特殊字符(!@#$%^&*)
+            level 4: 小写字母 + 大写字母 + 数字 + 完整标点符号
         """
         self._validate_params()
 
@@ -318,7 +346,7 @@ def setup_argument_parser():
         description="A tool to generate random password.")
     parser.add_argument("-l", "--level", dest="level",
                         type=int, default=DEFAULT_LEVEL,
-                        help="The level(1-3, default is %s) of password,"
+                        help="The level(1-4, default is %s) of password,"
                              " higher is complex" % DEFAULT_LEVEL)
     parser.add_argument("-n", "--length", dest="length",
                         type=int, default=DEFAULT_LENGTH,
@@ -340,6 +368,8 @@ def setup_argument_parser():
     parser.add_argument("-e", "--exclude-ambiguous", dest="exclude_ambiguous",
                         action='store_true',
                         help="Exclude ambiguous characters (I, l, 1, 0, O)")
+    parser.add_argument("-s", "--special-chars", dest="special_chars",
+                        help="Custom special character set (overrides level default)")
     return parser
 
 
@@ -414,9 +444,9 @@ def delete_password(del_id):
         color.print_ok('delete done')
 
 
-def generate_password(length, level, exclude_ambiguous):
+def generate_password(length, level, exclude_ambiguous, special_chars=None):
     """生成密码"""
-    p = Password(length, level, exclude_ambiguous)
+    p = Password(length, level, exclude_ambiguous, special_chars)
     return p.generate()
 
 
@@ -461,7 +491,7 @@ def main():
     if args.add:
         password = args.add
     else:
-        password = generate_password(args.length, args.level, args.exclude_ambiguous)
+        password = generate_password(args.length, args.level, args.exclude_ambiguous, args.special_chars)
         color.print_ok(password)
 
     # 保存密码（如果需要）

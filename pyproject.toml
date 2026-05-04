@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "passtk"
-version = "0.6.5"
+version = "0.7.0"
 description = "A tool to generate random password."
 authors = [
     {name = "Tanky Woo", email = "me@tankywoo.com"}

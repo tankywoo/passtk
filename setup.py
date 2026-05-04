@@ -14,7 +14,7 @@ requires = ['pycryptodome']
 
 setup(
     name="passtk",
-    version="0.6.5",
+    version="0.7.0",
     url="https://github.com/tankywoo/passtk",
     author="Tanky Woo",
     author_email="me@tankywoo.com",

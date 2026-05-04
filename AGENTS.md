@@ -14,7 +14,7 @@ uv run flake8 passtk/                          # Lint only
 
 ## Architecture
 
-- **All logic in one file**: `passtk/passtk.py` (~473 lines)
+- **All logic in one file**: `passtk/passtk.py` (~501 lines)
 - **Entry point**: `passtk.passtk:main` (registered in `pyproject.toml` `[project.scripts]`)
 - **No test suite**: Verification is manual via tox (compile + functional + lint)
 - **No CI/CD**: All testing is local
@@ -25,7 +25,7 @@ uv run flake8 passtk/                          # Lint only
 |-------|---------|
 | `Color` | Terminal color output |
 | `Cryptor` | AES-256-CBC encryption with PBKDF2 (backward compatible with legacy ECB) |
-| `Password` | Password generation with configurable complexity levels (1-3) |
+| `Password` | Password generation with configurable complexity levels (1-4) |
 
 ### Data storage
 
@@ -43,6 +43,9 @@ Passwords stored encrypted in `~/.passtk`. Master password collected via `getpas
 - `pycryptodome` is the sole external dependency — avoid adding new ones
 - Modifying `Cryptor` requires careful backward-compatibility testing with existing `~/.passtk` files
 - Functional test (`-u -l 2 -n 8`) is interactive if `~/.passtk` doesn't exist (it prompts for master password)
+- Level 3 uses safe special characters (`!@#$%^&*`), level 4 uses full `string.punctuation`
+- `--special-chars` / `-s` overrides level's default special character set (ignored at level 1-2)
+- Empty special character set (after `--exclude-ambiguous` filtering) causes error exit
 
 ## References
 

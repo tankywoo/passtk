@@ -1,3 +1,10 @@
+## 2026/05/04
+
+* Level 3 default special characters changed to safe set: !@#$%^&*
+* Add level 4 with full string.punctuation special characters
+* Add --special-chars / -s option for custom special character set
+
+
 ## 2022/10/26
 
 * add `change` master password
