@@ -9,3 +9,4 @@ build/
 .ropeproject
 README.html
 uv.lock
+.sisyphus/
